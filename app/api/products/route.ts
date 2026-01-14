@@ -13,5 +13,8 @@ export async function GET() {
     return NextResponse.json({ error: res.error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ products: res.data });
+  return NextResponse.json({ products: res.data },
+      { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } }
+
+  );
 }

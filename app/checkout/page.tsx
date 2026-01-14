@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/store/cartStore";
 import { Container, Card, CardContent, Button, Input } from "@/components/ui/ui";
@@ -26,23 +26,47 @@ export default function CheckoutPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // prevents double submit (even if user double-clicks)
+  const inFlight = useRef(false);
+
   const orderItems = useMemo(
     () => items.map((i) => ({ product_id: i.id, qty: i.qty })),
     [items]
   );
 
   async function placeOrder() {
+    if (inFlight.current) return; // hard guard
+    inFlight.current = true;
+
     setErr(null);
     setMsg(null);
 
-    if (!customerName.trim()) return setErr("Please enter your name.");
-    if (!phone.trim()) return setErr("Please enter your phone.");
-    if (!scheduledDate) return setErr("Please choose a date.");
-    if (items.length === 0) return setErr("Your cart is empty.");
+    if (!customerName.trim()) {
+      inFlight.current = false;
+      return setErr("Please enter your name.");
+    }
+    if (!phone.trim()) {
+      inFlight.current = false;
+      return setErr("Please enter your phone.");
+    }
+    if (!scheduledDate) {
+      inFlight.current = false;
+      return setErr("Please choose a date.");
+    }
+    if (items.length === 0) {
+      inFlight.current = false;
+      return setErr("Your cart is empty.");
+    }
 
     if (fulfillment === "delivery") {
-      if (!address.trim()) return setErr("Please enter delivery address.");
-      if (!zip.trim()) return setErr("Please enter ZIP code.");
+      if (!address.trim()) {
+        inFlight.current = false;
+        return setErr("Please enter delivery address.");
+      }
+      if (!zip.trim()) {
+        inFlight.current = false;
+        return setErr("Please enter ZIP code.");
+      }
     }
 
     setLoading(true);
@@ -51,25 +75,31 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customer_name: customerName,
-          phone,
+          customer_name: customerName.trim(),
+          phone: phone.trim(),
           fulfillment_type: fulfillment,
-          address: fulfillment === "delivery" ? address : undefined,
+          address: fulfillment === "delivery" ? address.trim() : undefined,
           city: fulfillment === "delivery" ? "Long Beach" : undefined,
           state: fulfillment === "delivery" ? "CA" : undefined,
-          zip: fulfillment === "delivery" ? zip : undefined,
+          zip: fulfillment === "delivery" ? zip.trim() : undefined,
           scheduled_date: scheduledDate,
-          time_window: timeWindow,
+          time_window: timeWindow.trim(),
           items: orderItems,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) return setErr(data.message ?? data.error ?? "Order failed.");
+      if (!res.ok) {
+        inFlight.current = false;
+        return setErr(data.message ?? data.error ?? "Order failed.");
+      }
 
       setMsg("Order placed! Redirecting...");
       clear();
       router.push(`/success?order=${data.order_id}`);
+    } catch {
+      inFlight.current = false;
+      setErr("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -78,10 +108,14 @@ export default function CheckoutPage() {
   if (!mounted) {
     return (
       <Container>
-        <Card><CardContent className="p-10 text-slate-600">Loading…</CardContent></Card>
+        <Card>
+          <CardContent className="p-10 text-slate-600">Loading…</CardContent>
+        </Card>
       </Container>
     );
   }
+
+  const disabled = loading;
 
   return (
     <Container className="space-y-6">
@@ -98,35 +132,35 @@ export default function CheckoutPage() {
             <div className="text-lg font-bold">Customer details</div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Input placeholder="Full name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-              <Input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Input disabled={disabled} placeholder="Full name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+              <Input disabled={disabled} placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Button variant={fulfillment === "pickup" ? "primary" : "secondary"} onClick={() => setFulfillment("pickup")}>
+              <Button disabled={disabled} variant={fulfillment === "pickup" ? "primary" : "secondary"} onClick={() => setFulfillment("pickup")}>
                 Pickup
               </Button>
-              <Button variant={fulfillment === "delivery" ? "primary" : "secondary"} onClick={() => setFulfillment("delivery")}>
+              <Button disabled={disabled} variant={fulfillment === "delivery" ? "primary" : "secondary"} onClick={() => setFulfillment("delivery")}>
                 Delivery
               </Button>
             </div>
 
             {fulfillment === "delivery" && (
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input placeholder="Address" value={address} onChange={(e) => setAddress(e.target.value)} />
-                <Input placeholder="ZIP (90804–90814)" value={zip} onChange={(e) => setZip(e.target.value)} />
+                <Input disabled={disabled} placeholder="Address" value={address} onChange={(e) => setAddress(e.target.value)} />
+                <Input disabled={disabled} placeholder="ZIP (90804–90814)" value={zip} onChange={(e) => setZip(e.target.value)} />
               </div>
             )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <div className="mb-2 text-sm font-semibold text-slate-600">Date</div>
-                <Input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
+                <Input disabled={disabled} type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
               </div>
 
               <div>
                 <div className="mb-2 text-sm font-semibold text-slate-600">Time Window</div>
-                <Input value={timeWindow} onChange={(e) => setTimeWindow(e.target.value)} placeholder="5-7pm" />
+                <Input disabled={disabled} value={timeWindow} onChange={(e) => setTimeWindow(e.target.value)} placeholder="5-7pm" />
               </div>
             </div>
 
@@ -140,7 +174,7 @@ export default function CheckoutPage() {
             {err && <div className="text-red-600 font-semibold">{err}</div>}
             {msg && <div className="text-green-700 font-semibold">{msg}</div>}
 
-            <Button className="w-full" onClick={placeOrder} disabled={loading}>
+            <Button className="w-full" onClick={placeOrder} disabled={disabled || items.length === 0}>
               {loading ? "Placing order..." : "Place order"}
             </Button>
           </CardContent>
