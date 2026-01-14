@@ -10,6 +10,7 @@ type Product = {
   name: string;
   size: string;
   price: number;
+  image_url?: string;
 };
 
 export default function SubscribeClient() {
@@ -112,16 +113,10 @@ export default function SubscribeClient() {
           <div className="mt-2 text-slate-600">Weekly or Biweekly. COD only for Phase 1.</div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button
-              variant={frequency === "WEEKLY" ? "primary" : "secondary"}
-              onClick={() => setFrequency("WEEKLY")}
-            >
+            <Button variant={frequency === "WEEKLY" ? "primary" : "secondary"} onClick={() => setFrequency("WEEKLY")}>
               Weekly
             </Button>
-            <Button
-              variant={frequency === "BIWEEKLY" ? "primary" : "secondary"}
-              onClick={() => setFrequency("BIWEEKLY")}
-            >
+            <Button variant={frequency === "BIWEEKLY" ? "primary" : "secondary"} onClick={() => setFrequency("BIWEEKLY")}>
               Biweekly
             </Button>
           </div>
@@ -137,16 +132,10 @@ export default function SubscribeClient() {
             <Input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
 
             <div className="flex flex-wrap gap-3">
-              <Button
-                variant={fulfillment === "pickup" ? "primary" : "secondary"}
-                onClick={() => setFulfillment("pickup")}
-              >
+              <Button variant={fulfillment === "pickup" ? "primary" : "secondary"} onClick={() => setFulfillment("pickup")}>
                 Pickup
               </Button>
-              <Button
-                variant={fulfillment === "delivery" ? "primary" : "secondary"}
-                onClick={() => setFulfillment("delivery")}
-              >
+              <Button variant={fulfillment === "delivery" ? "primary" : "secondary"} onClick={() => setFulfillment("delivery")}>
                 Delivery
               </Button>
             </div>
@@ -192,10 +181,22 @@ export default function SubscribeClient() {
               return (
                 <Card key={p.id}>
                   <CardContent className="p-6">
-                    <div className="text-xs font-semibold text-slate-500">{p.category}</div>
-                    <div className="mt-2 text-lg font-bold">{p.name}</div>
-                    <div className="text-sm text-slate-600">{p.size}</div>
+                    {/* IMAGE + TEXT */}
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={p.image_url || "/products/placeholder.png"}
+                        alt={p.name}
+                        className="h-16 w-16 rounded-2xl object-cover border border-slate-200 bg-white"
+                        loading="lazy"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-slate-500">{p.category}</div>
+                        <div className="mt-1 text-lg font-bold truncate">{p.name}</div>
+                        <div className="text-sm text-slate-600 truncate">{p.size}</div>
+                      </div>
+                    </div>
 
+                    {/* PRICE + ADD */}
                     <div className="mt-5 flex items-center justify-between">
                       <div className="text-xl font-extrabold">${Number(p.price).toFixed(2)}</div>
 

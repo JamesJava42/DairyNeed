@@ -6,7 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { useCart } from "@/store/cartStore";
 import { Container, Card, CardContent, Button, LinkChip } from "@/components/ui/ui";
 
-type Product = { id: string; category: string; name: string; size: string; price: number };
+type Product = {
+  id: string;
+  category: string;
+  name: string;
+  size: string;
+  price: number;
+  image_url?: string;
+};
 
 export default function ShopClient() {
   const searchParams = useSearchParams();
@@ -53,8 +60,12 @@ export default function ShopClient() {
           <div className="mt-3 text-lg text-slate-600">Pickup or delivery (ZIP-based). Pay with COD.</div>
 
           <div className="mt-8 flex flex-wrap gap-4">
-            <Link href="/cart"><Button>Go to cart</Button></Link>
-            <Link href="/subscribe"><Button variant="secondary">Weekly Subscription</Button></Link>
+            <Link href="/cart">
+              <Button>Go to cart</Button>
+            </Link>
+            <Link href="/subscribe">
+              <Button variant="secondary">Weekly Subscription</Button>
+            </Link>
           </div>
         </CardContent>
       </Card>
@@ -72,13 +83,26 @@ export default function ShopClient() {
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((p) => {
           const qty = mounted ? qtyInCart(p.id) : 0;
+
           return (
             <Card key={p.id}>
               <CardContent className="p-6">
-                <div className="text-xs font-semibold text-slate-500">{p.category}</div>
-                <div className="mt-2 text-lg font-bold">{p.name}</div>
-                <div className="text-sm text-slate-600">{p.size}</div>
+                {/* IMAGE + TEXT */}
+                <div className="flex items-start gap-4">
+                  <img
+                    src={p.image_url || "/products/placeholder.png"}
+                    alt={p.name}
+                    className="h-16 w-16 rounded-2xl object-cover border border-slate-200 bg-white"
+                    loading="lazy"
+                  />
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-slate-500">{p.category}</div>
+                    <div className="mt-1 text-lg font-bold truncate">{p.name}</div>
+                    <div className="text-sm text-slate-600 truncate">{p.size}</div>
+                  </div>
+                </div>
 
+                {/* PRICE + CART */}
                 <div className="mt-5 flex items-center justify-between">
                   <div className="text-xl font-extrabold">${Number(p.price).toFixed(2)}</div>
 
