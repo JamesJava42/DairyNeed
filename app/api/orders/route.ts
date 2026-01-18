@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../src/lib/supabaseAdmin";
 
-const VERSION = "orders-route-2026-01-18-v1";
+const VERSION = "orders-route-2026-01-18-v2";
 
 export async function GET() {
   return NextResponse.json({ ok: true, version: VERSION });
@@ -13,13 +13,21 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const customer_name = String(body.customer_name ?? "").trim();
+    const phone = String(body.phone ?? "").trim();
     const address = String(body.address ?? "").trim();
     const zip = String(body.zip ?? "").trim();
     const plan = String(body.plan ?? "").trim();
     const items = body.items;
     const total = Number(body.total ?? 0);
 
-    if (!customer_name || !address || zip.length < 5 || !plan) {
+    // Default store id from env (so DB NOT NULL passes)
+    const store_id = String(process.env.DEFAULT_STORE_ID ?? "").trim();
+
+    if (!store_id) {
+      return NextResponse.json({ error: "SERVER_MISSING_DEFAULT_STORE_ID", version: VERSION }, { status: 500 });
+    }
+
+    if (!customer_name || !phone || !address || zip.length < 5 || !plan) {
       return NextResponse.json({ error: "Missing required fields", version: VERSION }, { status: 400 });
     }
     if (!Array.isArray(items) || items.length === 0) {
@@ -31,7 +39,19 @@ export async function POST(req: Request) {
 
     const { data, error } = await supabaseAdmin
       .from("orders")
-      .insert([{ customer_name, address, zip, plan, items, total, source: "ios" }])
+      .insert([
+        {
+          store_id,
+          customer_name,
+          phone,
+          address,
+          zip,
+          plan,
+          items,
+          total,
+          source: "ios",
+        },
+      ])
       .select("id")
       .single();
 
@@ -42,4 +62,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: e?.message ?? "Server error", version: VERSION }, { status: 500 });
   }
 }
-
