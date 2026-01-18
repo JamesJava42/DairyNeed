@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../src/lib/supabaseAdmin";
 
@@ -20,12 +19,8 @@ export async function POST(req: Request) {
     const items = body.items;
     const total = Number(body.total ?? 0);
 
-    // Default store id from env (so DB NOT NULL passes)
+    // If your DB still requires store_id, set it here:
     const store_id = String(process.env.DEFAULT_STORE_ID ?? "").trim();
-
-    if (!store_id) {
-      return NextResponse.json({ error: "SERVER_MISSING_DEFAULT_STORE_ID", version: VERSION }, { status: 500 });
-    }
 
     if (!customer_name || !phone || !address || zip.length < 5 || !plan) {
       return NextResponse.json({ error: "Missing required fields", version: VERSION }, { status: 400 });
@@ -37,21 +32,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid total", version: VERSION }, { status: 400 });
     }
 
+    const insertRow: any = { customer_name, phone, address, zip, plan, items, total, source: "ios" };
+    if (store_id) insertRow.store_id = store_id; // only include if provided
+
     const { data, error } = await supabaseAdmin
       .from("orders")
-      .insert([
-        {
-          store_id,
-          customer_name,
-          phone,
-          address,
-          zip,
-          plan,
-          items,
-          total,
-          source: "ios",
-        },
-      ])
+      .insert([insertRow])
       .select("id")
       .single();
 
