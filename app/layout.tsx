@@ -5,6 +5,10 @@ import { Suspense } from "react";
 export const metadata = {
   title: "DairyShop",
   description: "Pickup or delivery (ZIP-based). Pay with COD.",
+  manifest: "/manifest.webmanifest",
+  themeColor: "#0f172a",
+  appleWebApp: { capable: true, title: "DairyNeed", statusBarStyle: "default" },
+  icons: { apple: "/apple-touch-icon.png" }
 };
 
 function NavFallback() {
