@@ -1,3 +1,6 @@
+// store/cartStore.ts
+"use client";
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -7,16 +10,16 @@ export type CartItem = {
   name: string;
   size: string;
   price: number;
+  image_url?: string; // ✅ added (optional)
   qty: number;
 };
 
 type CartState = {
   items: CartItem[];
-  add: (p: Omit<CartItem, "qty">) => void;
-  remove: (id: string) => void;
-  setQty: (id: string, qty: number) => void;
+  add: (item: Omit<CartItem, "qty">) => void;
   inc: (id: string) => void;
   dec: (id: string) => void;
+  remove: (id: string) => void;
   clear: () => void;
   total: () => number;
 };
@@ -25,31 +28,53 @@ export const useCart = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
-      add: (p) =>
-        set((s) => {
-          const found = s.items.find((i) => i.id === p.id);
+
+      add: (item) =>
+        set((state) => {
+          const found = state.items.find((x) => x.id === item.id);
           if (found) {
-            return { items: s.items.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i)) };
+            return {
+              items: state.items.map((x) =>
+                x.id === item.id ? { ...x, qty: x.qty + 1 } : x
+              ),
+            };
           }
-          return { items: [...s.items, { ...p, qty: 1 }] };
+          return { items: [...state.items, { ...item, qty: 1 }] };
         }),
-      remove: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
-      setQty: (id, qty) =>
-        set((s) => ({
-          items: s.items.map((i) => (i.id === id ? { ...i, qty: Math.max(1, Number(qty) || 1) } : i)),
-        })),
+
       inc: (id) =>
-        set((s) => ({
-          items: s.items.map((i) => (i.id === id ? { ...i, qty: i.qty + 1 } : i)),
+        set((state) => ({
+          items: state.items.map((x) =>
+            x.id === id ? { ...x, qty: x.qty + 1 } : x
+          ),
         })),
+
       dec: (id) =>
-        set((s) => ({
-          items: s.items
-            .map((i) => (i.id === id ? { ...i, qty: i.qty - 1 } : i))
-            .filter((i) => i.qty > 0),
-        })),
+        set((state) => {
+          const current = state.items.find((x) => x.id === id);
+          if (!current) return state;
+
+          if (current.qty <= 1) {
+            return { items: state.items.filter((x) => x.id !== id) };
+          }
+
+          return {
+            items: state.items.map((x) =>
+              x.id === id ? { ...x, qty: x.qty - 1 } : x
+            ),
+          };
+        }),
+
+      remove: (id) =>
+        set((state) => ({ items: state.items.filter((x) => x.id !== id) })),
+
       clear: () => set({ items: [] }),
-      total: () => get().items.reduce((sum, i) => sum + i.price * i.qty, 0),
+
+      total: () =>
+        get().items.reduce(
+          (sum, i) => sum + Number(i.price || 0) * Number(i.qty || 0),
+          0
+        ),
     }),
     { name: "dairy-cart" }
   )

@@ -1,14 +1,20 @@
+// app/layout.tsx
 import "./globals.css";
-import NavBar from "@/components/NavBar";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import NavBar from "@/components/NavBar";
+import Providers from "@/components/Providers";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "DairyShop",
   description: "Pickup or delivery (ZIP-based). Pay with COD.",
   manifest: "/manifest.webmanifest",
-  themeColor: "#0f172a",
   appleWebApp: { capable: true, title: "DairyNeed", statusBarStyle: "default" },
-  icons: { apple: "/apple-touch-icon.png" }
+  icons: { apple: "/apple-touch-icon.png" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
 };
 
 function NavFallback() {
@@ -25,11 +31,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
-        <Suspense fallback={<NavFallback />}>
-          <NavBar />
-        </Suspense>
+        <Providers>
+          <Suspense fallback={<NavFallback />}>
+            <NavBar />
+          </Suspense>
 
-        <div className="py-8">{children}</div>
+          <div className="py-8">{children}</div>
+        </Providers>
       </body>
     </html>
   );

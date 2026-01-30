@@ -1,80 +1,133 @@
+// app/cart/CartPageClient.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useCart } from "@/store/cartStore";
-import { Container, Card, CardContent, Button } from "@/components/ui/ui";
+import { BottomCartBar } from "@/components/BottomCartBar";
+import { Button, Card, CardContent, Container } from "@/components/ui/ui";
 
-export default function CartPage() {
+function money(n: number) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return "$0.00";
+  return `$${x.toFixed(2)}`;
+}
+
+export default function CartPageClient() {
   const items = useCart((s) => s.items);
   const inc = useCart((s) => s.inc);
   const dec = useCart((s) => s.dec);
-  const remove = useCart((s) => s.remove);
-  const total = useCart((s) => s.total());
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const total = useMemo(
+    () => items.reduce((sum, i) => sum + Number(i.price || 0) * Number(i.qty || 0), 0),
+    [items]
+  );
 
-  if (!mounted) {
-    return <Container><Card><CardContent className="p-10 text-slate-600">Loading…</CardContent></Card></Container>;
-  }
+  const itemCount = useMemo(() => items.reduce((sum, i) => sum + Number(i.qty || 0), 0), [items]);
 
   return (
-    <Container className="space-y-6">
+    <Container className="space-y-6 pb-24">
       <Card>
-        <CardContent className="p-10 flex items-center justify-between">
+        <CardContent className="p-6 sm:p-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="text-3xl font-extrabold">Cart</div>
-            <div className="mt-2 text-slate-600">Review items before checkout</div>
+            <div className="text-3xl font-extrabold">Your cart</div>
+            <div className="mt-2 text-slate-600">
+              {itemCount} item(s) • Total {money(total)}
+            </div>
           </div>
-          <Link href="/shop"><Button variant="secondary">Continue shopping</Button></Link>
+
+          <div className="mt-2 sm:mt-0 flex flex-col gap-2 sm:flex-row">
+            <Link href="/shop" className="w-full sm:w-auto">
+              <Button variant="secondary" className="w-full sm:w-auto">
+                Continue shopping
+              </Button>
+            </Link>
+            <Link href="/checkout" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto" disabled={items.length === 0}>
+                Checkout
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
 
       {items.length === 0 ? (
-        <Card><CardContent className="p-10 text-slate-600">Your cart is empty.</CardContent></Card>
+        <Card>
+          <CardContent className="p-10 text-slate-600">
+            Your cart is empty.{" "}
+            <Link className="underline" href="/shop">
+              Shop now
+            </Link>
+            .
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4">
-            {items.map((i) => (
-              <Card key={i.id}>
-                <CardContent className="p-6 flex items-center justify-between gap-4">
-                  <div>
-                    <div className="font-extrabold">{i.name}</div>
-                    <div className="text-sm text-slate-600">{i.size}</div>
-                    <div className="mt-1 text-sm text-slate-600">
-                      ${i.price.toFixed(2)} each • <span className="font-bold">${(i.price * i.qty).toFixed(2)}</span>
+        <div className="grid gap-4">
+          {items.map((i) => (
+            <Card key={i.id} className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="flex flex-col gap-4 p-4 sm:flex-row sm:p-6">
+                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-100 self-start">
+                    {i.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={i.image_url} alt={i.name} className="h-full w-full object-cover" />
+                    ) : null}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="font-extrabold truncate">{i.name}</div>
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                        {i.category}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-sm text-slate-600">{i.size}</div>
+
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      <span className="rounded-full border border-slate-200 px-2 py-1 font-semibold text-slate-600">
+                        Fresh
+                      </span>
+                      <span className="rounded-full border border-slate-200 px-2 py-1 font-semibold text-slate-600">
+                        Rockview
+                      </span>
+                      <span className="rounded-full border border-slate-200 px-2 py-1 font-semibold text-slate-600">
+                        Great for breakfast
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button className="h-10 w-10 rounded-2xl border border-slate-200 hover:bg-slate-50 font-bold" onClick={() => dec(i.id)}>−</button>
-                    <div className="min-w-10 text-center font-bold">{i.qty}</div>
-                    <button className="h-10 w-10 rounded-2xl border border-slate-200 hover:bg-slate-50 font-bold" onClick={() => inc(i.id)}>+</button>
-                    <button className="ml-2 text-sm font-semibold text-slate-500 hover:text-slate-900" onClick={() => remove(i.id)}>Remove</button>
+                  <div className="flex flex-row items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-between">
+                    <div className="font-extrabold whitespace-nowrap">
+                      {money(Number(i.price) * Number(i.qty))}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        className="h-9 w-10 px-0 sm:h-10 sm:w-12"
+                        onClick={() => dec(i.id)}
+                        aria-label="Decrease"
+                      >
+                        −
+                      </Button>
+                      <div className="min-w-[28px] text-center font-extrabold">{i.qty}</div>
+                      <Button
+                        className="h-9 w-10 px-0 sm:h-10 sm:w-12"
+                        onClick={() => inc(i.id)}
+                        aria-label="Increase"
+                      >
+                        +
+                      </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <Card className="h-fit">
-            <CardContent className="p-8">
-              <div className="text-sm font-semibold text-slate-500">Summary</div>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="text-lg font-bold">Total</div>
-                <div className="text-2xl font-extrabold">${total.toFixed(2)}</div>
-              </div>
-
-              <Link href="/checkout" className="block mt-6">
-                <Button className="w-full">Checkout</Button>
-              </Link>
-
-              <div className="mt-3 text-xs text-slate-500">Payment: COD</div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
+
+      <BottomCartBar href="/checkout" label="Checkout" />
     </Container>
   );
 }

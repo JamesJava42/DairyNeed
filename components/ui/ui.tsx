@@ -1,3 +1,4 @@
+// components/ui/ui.tsx
 import React from "react";
 
 export function cn(...classes: (string | false | null | undefined)[]) {
@@ -12,7 +13,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return (
     <div
       className={cn(
-        "rounded-3xl border border-slate-200 bg-white shadow-sm",
+        "rounded-[28px] border border-slate-200/70 bg-white/70 backdrop-blur shadow-[0_1px_2px_rgba(0,0,0,0.05),0_14px_34px_rgba(15,23,42,0.06)]",
         className
       )}
       {...props}
@@ -20,21 +21,17 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   );
 }
 
-export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-8 pb-0", className)} {...props} />;
-}
-
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-8", className)} {...props} />;
+  return <div className={cn("p-6 sm:p-8", className)} {...props} />;
 }
 
 export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       className={cn(
-        "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm",
+        "w-full rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-900",
         "placeholder:text-slate-400",
-        "outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-300",
+        "outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-400",
         className
       )}
       {...props}
@@ -50,13 +47,13 @@ export function Button({
   variant?: "primary" | "secondary" | "ghost";
 }) {
   const base =
-    "inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition";
+    "inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-bold transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed";
   const styles =
     variant === "primary"
-      ? "bg-sky-600 text-white hover:bg-sky-700 shadow-sm"
+      ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-[0_10px_22px_rgba(5,150,105,0.20)]"
       : variant === "secondary"
-      ? "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50"
-      : "bg-transparent text-slate-700 hover:bg-slate-100";
+      ? "bg-white/80 text-slate-900 border border-slate-200/70 hover:bg-white"
+      : "bg-transparent text-slate-700 hover:bg-slate-100/70";
 
   return <button className={cn(base, styles, className)} {...props} />;
 }
@@ -69,10 +66,10 @@ export function LinkChip({
   return (
     <button
       className={cn(
-        "rounded-full px-4 py-2 text-sm border transition",
+        "rounded-full px-4 py-2 text-sm font-black border transition",
         active
-          ? "bg-slate-900 text-white border-slate-900"
-          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+          ? "bg-emerald-600 text-white border-emerald-600 shadow-[0_10px_18px_rgba(5,150,105,0.20)]"
+          : "bg-white/70 text-slate-700 border-slate-200/70 hover:bg-white",
         className
       )}
       {...props}

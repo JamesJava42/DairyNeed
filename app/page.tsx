@@ -1,25 +1,23 @@
+// app/page.tsx
 import Link from "next/link";
-import { Container, Card, CardContent, Button } from "@/components/ui/ui";
+import { Button, Card, CardContent, Container } from "@/components/ui/ui";
 
 export default function Home() {
   return (
-    <Container>
+    <Container className="space-y-6">
       <Card>
-        <CardContent className="p-10">
-          <div className="text-4xl font-extrabold tracking-tight">Welcome to DairyShop</div>
-          <div className="mt-3 text-lg text-slate-600">
-            Pickup or delivery (ZIP-based). Pay with COD.
-          </div>
+        <CardContent className="p-6 sm:p-10">
+          <div className="text-3xl font-black">Rockview Dairy</div>
+          <div className="mt-2 text-slate-600">Fresh dairy essentials — delivered or pickup.</div>
 
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link href="/shop">
-              <Button>Go to shop</Button>
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+            <Link href="/shop" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto">Shop</Button>
             </Link>
-            <Link href="/subscribe">
-              <Button variant="secondary">Weekly Subscription</Button>
-            </Link>
-            <Link href="/cart">
-              <Button variant="secondary">Go to cart</Button>
+            <Link href="/subscribe" className="w-full sm:w-auto">
+              <Button variant="secondary" className="w-full sm:w-auto">
+                Subscribe
+              </Button>
             </Link>
           </div>
         </CardContent>

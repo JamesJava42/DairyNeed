@@ -1,32 +1,25 @@
-import Link from "next/link";
-import { Container, Card, CardContent, Button } from "@/components/ui/ui";
+// app/success/page.tsx
+import { Suspense } from "react";
+import SuccessClient from "./SuccessClient";
 
-export default function SuccessPage({ searchParams }: { searchParams: { order?: string } }) {
-  const order = searchParams?.order;
-
+function SuccessLoading() {
   return (
-    <Container>
-      <Card>
-        <CardContent className="p-10">
-          <div className="text-3xl font-extrabold">✅ Success</div>
-          <div className="mt-2 text-slate-600">
-            Your order was placed. We will confirm by text/call.
-          </div>
+    <div className="mx-auto max-w-6xl px-4 pb-24">
+      <div className="rounded-[28px] border border-slate-200/70 bg-white/70 p-8 shadow-sm">
+        <div className="h-6 w-32 rounded bg-slate-100" />
+        <div className="mt-4 h-10 w-64 rounded bg-slate-100" />
+        <div className="mt-3 h-4 w-80 rounded bg-slate-100" />
+        <div className="mt-6 h-24 rounded-3xl bg-slate-100" />
+        <div className="mt-4 h-11 w-40 rounded-2xl bg-slate-100" />
+      </div>
+    </div>
+  );
+}
 
-          {order && (
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-semibold text-slate-600">Order ID</div>
-              <div className="mt-1 font-extrabold">{order}</div>
-            </div>
-          )}
-
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link href="/shop"><Button>Back to shop</Button></Link>
-            <Link href="/subscribe"><Button variant="secondary">Subscription</Button></Link>
-            <Link href="/cart"><Button variant="secondary">Cart</Button></Link>
-          </div>
-        </CardContent>
-      </Card>
-    </Container>
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<SuccessLoading />}>
+      <SuccessClient />
+    </Suspense>
   );
 }

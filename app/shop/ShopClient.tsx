@@ -1,10 +1,10 @@
+// app/shop/ShopClient.tsx
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useCart } from "@/store/cartStore";
-import { Container, Card, CardContent, Button, LinkChip } from "@/components/ui/ui";
+import ProductCard from "@/components/ProductCard";
+import { Container, Card, CardContent } from "@/components/ui/ui";
 
 type Product = {
   id: string;
@@ -12,125 +12,96 @@ type Product = {
   name: string;
   size: string;
   price: number;
-  image_url?: string;
+  image_url?: string | null;
 };
 
 export default function ShopClient() {
   const searchParams = useSearchParams();
-  const q = (searchParams.get("q") ?? "").toLowerCase();
+  const cat = searchParams.get("cat") ?? "All";
+  const q = (searchParams.get("q") ?? "").trim().toLowerCase();
 
-  const add = useCart((s) => s.add);
-  const inc = useCart((s) => s.inc);
-  const dec = useCart((s) => s.dec);
-  const items = useCart((s) => s.items);
-
-  const [mounted, setMounted] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
-  const [category, setCategory] = useState("All");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
-    fetch("/api/products")
-      .then((r) => r.json())
-      .then((d) => (d.error ? setError(d.error) : setProducts(d.products ?? [])))
-      .catch(() => setError("Failed to load products"));
+    let alive = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch("/api/products", { cache: "no-store" });
+        const data = await res.json();
+
+        if (!alive) return;
+
+        if (data?.error) {
+          setError(String(data.error));
+          setProducts([]);
+        } else {
+          setProducts((data?.products ?? []) as Product[]);
+        }
+      } catch (e: any) {
+        if (!alive) return;
+        setError(e?.message ?? "Failed to load products");
+        setProducts([]);
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const categories = useMemo(
-    () => ["All", ...Array.from(new Set(products.map((p) => p.category)))],
-    [products]
-  );
-
   const filtered = useMemo(() => {
-    return products.filter((p) => {
-      const okCat = category === "All" || p.category === category;
-      const okText = !q || `${p.name} ${p.size} ${p.category}`.toLowerCase().includes(q);
-      return okCat && okText;
-    });
-  }, [products, category, q]);
+    let list = products;
 
-  const qtyInCart = (id: string) => items.find((i) => i.id === id)?.qty ?? 0;
+    if (cat !== "All") list = list.filter((p) => p.category === cat);
+
+    if (q) {
+      list = list.filter((p) => {
+        const hay = `${p.name} ${p.size} ${p.category}`.toLowerCase();
+        return hay.includes(q);
+      });
+    }
+
+    return list;
+  }, [products, cat, q]);
 
   return (
-    <Container className="space-y-6">
-      <Card>
-        <CardContent className="p-10">
-          <div className="text-4xl font-extrabold tracking-tight">Shop Fresh Dairy</div>
-          <div className="mt-3 text-lg text-slate-600">Pickup or delivery (ZIP-based). Pay with COD.</div>
+    <Container className="pb-24">
+      {error ? (
+        <Card className="mb-4">
+          <CardContent className="p-5 text-red-700 font-semibold">{error}</CardContent>
+        </Card>
+      ) : null}
 
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link href="/cart">
-              <Button>Go to cart</Button>
-            </Link>
-            <Link href="/subscribe">
-              <Button variant="secondary">Weekly Subscription</Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex flex-wrap gap-2">
-        {categories.map((c) => (
-          <LinkChip key={c} active={c === category} onClick={() => setCategory(c)}>
-            {c}
-          </LinkChip>
-        ))}
+      {/* 2 cols on mobile = compact app look */}
+      <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {loading
+          ? Array.from({ length: 10 }).map((_, idx) => (
+              <div key={idx} className="rounded-3xl border border-slate-200/70 bg-white/60 p-4 shadow-sm">
+                <div className="h-14 w-14 rounded-2xl bg-slate-100" />
+                <div className="mt-3 h-4 w-2/3 rounded bg-slate-100" />
+                <div className="mt-2 h-3 w-1/2 rounded bg-slate-100" />
+                <div className="mt-3 h-9 rounded-2xl bg-slate-100" />
+              </div>
+            ))
+          : filtered.map((p) => <ProductCard key={p.id} p={p} />)}
       </div>
 
-      {error && <div className="text-red-600 font-semibold">{error}</div>}
-
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((p) => {
-          const qty = mounted ? qtyInCart(p.id) : 0;
-
-          return (
-            <Card key={p.id}>
-              <CardContent className="p-6">
-                {/* IMAGE + TEXT */}
-                <div className="flex items-start gap-4">
-                  <img
-                    src={p.image_url || "/products/placeholder.png"}
-                    alt={p.name}
-                    className="h-16 w-16 rounded-2xl object-cover border border-slate-200 bg-white"
-                    loading="lazy"
-                  />
-                  <div className="min-w-0">
-                    <div className="text-xs font-semibold text-slate-500">{p.category}</div>
-                    <div className="mt-1 text-lg font-bold truncate">{p.name}</div>
-                    <div className="text-sm text-slate-600 truncate">{p.size}</div>
-                  </div>
-                </div>
-
-                {/* PRICE + CART */}
-                <div className="mt-5 flex items-center justify-between">
-                  <div className="text-xl font-extrabold">${Number(p.price).toFixed(2)}</div>
-
-                  {qty === 0 ? (
-                    <Button onClick={() => add(p)}>Add</Button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="h-10 w-10 rounded-2xl border border-slate-200 hover:bg-slate-50 font-bold"
-                        onClick={() => dec(p.id)}
-                      >
-                        −
-                      </button>
-                      <div className="min-w-10 text-center font-bold">{qty}</div>
-                      <button
-                        className="h-10 w-10 rounded-2xl border border-slate-200 hover:bg-slate-50 font-bold"
-                        onClick={() => inc(p.id)}
-                      >
-                        +
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {!loading && filtered.length === 0 ? (
+        <Card className="mt-4">
+          <CardContent className="p-6 text-slate-600 font-semibold">
+            No products found. Try another category or search.
+          </CardContent>
+        </Card>
+      ) : null}
     </Container>
   );
 }
